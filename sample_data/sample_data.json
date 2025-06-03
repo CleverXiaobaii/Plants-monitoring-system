@@ -1,0 +1,242 @@
+[
+  {
+    "sensor_id": 1,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 26.11,
+    "humidity": 57.24,
+    "soil_moisture": 535,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 2,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 26.63,
+    "humidity": 58.5,
+    "soil_moisture": 501,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 3,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 24.68,
+    "humidity": 64.95,
+    "soil_moisture": 469,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 4,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 25.6,
+    "humidity": 57.51,
+    "soil_moisture": 494,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 5,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 26.13,
+    "humidity": 52.07,
+    "soil_moisture": 474,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 6,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 24.92,
+    "humidity": 63.01,
+    "soil_moisture": 491,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 7,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 24.8,
+    "humidity": 67.74,
+    "soil_moisture": 454,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 8,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 22.53,
+    "humidity": 60.79,
+    "soil_moisture": 501,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 9,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 22.31,
+    "humidity": 57.47,
+    "soil_moisture": 506,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 10,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 24.62,
+    "humidity": 57.71,
+    "soil_moisture": 552,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 11,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 24.82,
+    "humidity": 54.66,
+    "soil_moisture": 479,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 12,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 24.18,
+    "humidity": 56.08,
+    "soil_moisture": 562,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 13,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 24.07,
+    "humidity": 56.05,
+    "soil_moisture": 496,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 14,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 24.67,
+    "humidity": 60.35,
+    "soil_moisture": 534,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 15,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 25.69,
+    "humidity": 71.85,
+    "soil_moisture": 463,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 16,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 21.25,
+    "humidity": 68.04,
+    "soil_moisture": 494,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 17,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 23.53,
+    "humidity": 63.27,
+    "soil_moisture": 510,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 18,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 25.52,
+    "humidity": 52.24,
+    "soil_moisture": 478,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 19,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 26.14,
+    "humidity": 62.88,
+    "soil_moisture": 498,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 20,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 23.99,
+    "humidity": 65.09,
+    "soil_moisture": 482,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 21,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 25.49,
+    "humidity": 64.04,
+    "soil_moisture": 551,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 22,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 27.56,
+    "humidity": 65.81,
+    "soil_moisture": 498,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 23,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 24.84,
+    "humidity": 55.4,
+    "soil_moisture": 492,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 24,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 26.41,
+    "humidity": 73.02,
+    "soil_moisture": 528,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 25,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 28.14,
+    "humidity": 61.9,
+    "soil_moisture": 488,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 26,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 25.6,
+    "humidity": 58.22,
+    "soil_moisture": 491,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 27,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 21.7,
+    "humidity": 57.07,
+    "soil_moisture": 489,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 28,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 24.94,
+    "humidity": 56.41,
+    "soil_moisture": 514,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 29,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 27.38,
+    "humidity": 57.31,
+    "soil_moisture": 469,
+    "is_anomaly": false
+  },
+  {
+    "sensor_id": 30,
+    "timestamp": "2025-06-03T14:59:42",
+    "temperature": 24.74,
+    "humidity": 72.84,
+    "soil_moisture": 504,
+    "is_anomaly": false
+  }
+]

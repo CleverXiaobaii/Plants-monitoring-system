@@ -15,12 +15,12 @@ class Config:
     # 连接字符串
     @property
     def DB_URL(self):
-        return """your database"""    #f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
+        return """your database url"""    #f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     # 管理员连接字符串（用于创建数据库）
     @property
     def ADMIN_DB_URL(self):
-        return """your admin database"""    #f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/postgres"
+        return """your admin database url"""    #f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/postgres"
 
 
 config = Config()

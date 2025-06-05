@@ -16,7 +16,7 @@ class DatabaseManager:
         if url is None:
             url = config.DB_URL
 
-        max_retries = 5
+        max_retries = 2
         for i in range(max_retries):
             try:
                 self.conn = psycopg2.connect(url)
@@ -118,20 +118,22 @@ class DatabaseManager:
 
     def initialize_database(self):
         """初始化数据库"""
+        """
         # 创建数据库
         if not self.create_database():
             return False
+        """
 
-        # 连接到新数据库
+        # connect to the database
         if not self.connect():
             return False
 
-        # 检查表是否存在
+        # check if tables exists
         if self.check_tables():
             print("database initialized")
             return True
 
-        # 执行初始化脚本
+        # initialize
         print("initializing...")
         schema_path = os.path.join(os.path.dirname(__file__), "..", "sql", "schema.sql")
         if self.execute_sql_file(schema_path):

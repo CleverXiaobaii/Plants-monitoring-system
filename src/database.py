@@ -34,7 +34,15 @@ class DatabaseManager:
         """创建数据库（如果不存在）"""
         try:
             # 连接到默认数据库
-            self.connect(config.ADMIN_DB_URL)
+            #self.connect(config.ADMIN_DB_URL)
+            if not self.connect(config.ADMIN_DB_URL):
+                print("❌ 无法连接到管理员数据库")
+                return False  # 提前返回
+
+            # 确保连接对象有效
+            if self.conn is None:
+                print("❌ 数据库连接对象为空")
+                return False
 
             # 设置自动提交
             self.conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
@@ -118,28 +126,26 @@ class DatabaseManager:
 
     def initialize_database(self):
         """初始化数据库"""
-        """
         # 创建数据库
-        if not self.create_database():
-            return False
-        """
+        #if not self.create_database():
+            #return False
 
-        # connect to the database
+        # 连接到新数据库
         if not self.connect():
             return False
 
-        # check if tables exists
+        # 检查表是否存在
         if self.check_tables():
             print("database initialized")
             return True
 
-        # initialize
+        # 执行初始化脚本
         print("initializing...")
         schema_path = os.path.join(os.path.dirname(__file__), "..", "sql", "schema.sql")
         if self.execute_sql_file(schema_path):
             # 执行初始化数据脚本
-            init_path = os.path.join(os.path.dirname(__file__), "..", "sql", "init.sql")
-            self.execute_sql_file(init_path)
+            #init_path = os.path.join(os.path.dirname(__file__), "..", "sql", "init.sql")
+            #self.execute_sql_file(init_path)
             print("initializing success!")
             return True
 

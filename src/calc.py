@@ -51,17 +51,17 @@ def fetch_sensor_data(cur):
 
 def main():
     conn = psycopg2.connect(
-        host="localhost",
+        host="innovatinsa.piwio.fr",
         port=5432,
         dbname="plant_monitor",
-        user="chikara"
-        # password="postgres"
+        user="postgres",
+        password="innovatinsa-piwio-5432"
     )
     cur = conn.cursor()
     try:
         calc_avg(cur)
-        calc_avg_day_sensor(cur, '2025-06-01', 1)
-        calc_min_max_day_sensor(cur, '2025-06-01', 1)
+        calc_avg_day_sensor(cur, '2025-06-05', 1)
+        calc_min_max_day_sensor(cur, '2025-06-05', 1)
     finally:
         cur.close()
         conn.close()

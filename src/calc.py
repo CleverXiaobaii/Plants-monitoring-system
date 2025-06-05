@@ -27,6 +27,24 @@ def calc_avg_day_sensor(cur, date, sensor_id):
         print(f"No data found for (Date: {date}, Sensor: {sensor_id})")
 # This script calculates the average temperature, humidity and soil moisture for a specific sensor on a specific date.
 
+def calc_min_max_day_sensor(cur, date, sensor_id):
+    cur.execute("""
+        SELECT MIN(temperature) AS min_temp, MAX(temperature) AS max_temp,
+               MIN(humidity) AS min_humidity, MAX(humidity) AS max_humidity,
+               MIN(soil_moisture) AS min_soil_moisture, MAX(soil_moisture) AS max_soil_moisture
+        FROM rawdata_from_sensors
+        WHERE DATE(time_stamp) = %s AND sensor_id = %s;
+    """, (date, sensor_id))
+    result = cur.fetchone()
+    if result and all(val is not None for val in result):
+        min_temp, max_temp, min_humidity, max_humidity, min_soil_moisture, max_soil_moisture = result
+        print(f"Date: {date}, Sensor: {sensor_id} | Min Temp: {min_temp:.2f}, Max Temp: {max_temp:.2f}, "
+              f"Min Humidity: {min_humidity:.2f}, Max Humidity: {max_humidity:.2f}, "
+              f"Min Soil Moisture: {min_soil_moisture:.2f}, Max Soil Moisture: {max_soil_moisture:.2f}")
+    else:
+        print(f"No data found for (Date: {date}, Sensor: {sensor_id})")
+# This script calculates the minimum and maximum temperature, humidity and soil moisture for a specific sensor on a specific date.
+
 def fetch_sensor_data(cur):
     cur.execute("SELECT * FROM rawdata_from_sensors;")
     return cur.fetchall()
@@ -42,7 +60,8 @@ def main():
     cur = conn.cursor()
     try:
         calc_avg(cur)
-        calc_avg_day_sensor(cur, '2025-06-01', 1)  # Example date and sensor_id
+        calc_avg_day_sensor(cur, '2025-06-01', 1)
+        calc_min_max_day_sensor(cur, '2025-06-01', 1)
     finally:
         cur.close()
         conn.close()

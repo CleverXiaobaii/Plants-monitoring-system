@@ -67,14 +67,20 @@ def fetch_sensor_data(cur):
     cur.execute("SELECT * FROM rawdata_from_sensors;")
     return cur.fetchall()
 
+def get_db_connection():
+    return psycopg2.connect(config.DB_URL)
+
+# --- for debug ---
 def main():
+    print("DB URL:", config.DB_URL)
+    print(config.DB_HOST, config.DB_PORT, config.DB_NAME, config.DB_USER, config.DB_PASSWORD)
     conn = psycopg2.connect(config.DB_URL)
     cur = conn.cursor()
     try:
         calc_avg(cur)
         print("---")
-        # calc_avg_day_sensor(cur, '2025-06-05', 1)
-        # calc_min_max_day_sensor(cur, '2025-06-05', 1)
+        calc_avg_day_sensor(cur, '2025-06-05', 1)
+        calc_min_max_day_sensor(cur, '2025-06-05', 1)
         stats(cur, '2025-06-05', 3)
     finally:
         cur.close()

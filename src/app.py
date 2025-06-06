@@ -1,26 +1,26 @@
-from flask import Flask, jsonify
+# app.py
+from flask import Flask, jsonify, request
 import psycopg2
-from config import config
+from calc import (
+    get_db_connection,
+    fetch_sensor_data
+)
 
 app = Flask(__name__)
 
-def get_db_connection():
-    conn = psycopg2.connect(config.DB_URL)
-    return conn
-
-@app.route('/sensor-data')
-def get_sensor_data():
+@app.route('/sensor-data', methods=['GET']) # return all sensor data
+def sensor_data(): 
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        cur.execute("SELECT * FROM rawdata_from_sensors;")
-        rows = cur.fetchall()
-        columns = [desc[0] for desc in cur.description]
-        data = [dict(zip(columns, row)) for row in rows]
-        return jsonify(data)
+        data = fetch_sensor_data(cur)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     finally:
         cur.close()
         conn.close()
+        
+    return jsonify(data)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='127.0.0.1', port=5000, debug=True)

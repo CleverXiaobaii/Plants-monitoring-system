@@ -1,5 +1,6 @@
 import threading
 import listen
+import calc
 
 from database import db_manager
 
@@ -14,9 +15,10 @@ def main():
     print("🖥️ 应用程序运行中...")
     # 你的业务逻辑代码
     thread_listen = threading.Thread(target=listen.listening())
-    #thread2 = threading.Thread(target=worker)
+    thread_calc = threading.Thread(target=calc.main())
 
     thread_listen.start()
+    thread_calc.start()
     
     print("🛑 应用程序结束")
 

@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 import psycopg2
 from calc import (
     get_db_connection,
@@ -7,6 +7,10 @@ from calc import (
 )
 
 app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return render_template('test.html')
 
 @app.route('/sensor-data', methods=['GET']) # return all sensor data
 def sensor_data(): 

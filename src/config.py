@@ -8,7 +8,7 @@ class Config:
     # 数据库配置
     DB_HOST = os.getenv("DB_HOST", "innovatinsa.piwio.fr")
     DB_PORT = os.getenv("DB_PORT", "5432")
-    DB_NAME = os.getenv("DB_NAME", "")
+    DB_NAME = os.getenv("DB_NAME", "group02")
     DB_USER = os.getenv("DB_USER", "postgres")
     DB_PASSWORD = os.getenv("DB_PASSWORD", "innovatinsa-piwio-5432")
 

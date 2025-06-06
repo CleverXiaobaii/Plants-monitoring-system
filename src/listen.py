@@ -1,6 +1,6 @@
 import os
 import paho.mqtt.client as mqtt
-import pymysql
+import psycopg2
 import json
 import time
 import logging
@@ -15,7 +15,7 @@ CLIENT_ID = "mqtt-listener"
 # MySQL配置 - 确保这些变量正确设置
 DB_HOST = "innovatinsa.piwio.fr"
 DB_PORT = 5432
-DB_NAME = ""  # 这里需要填写实际的数据库名称
+DB_NAME = "group02"  # 这里需要填写实际的数据库名称
 DB_USER = "postgres"
 DB_PASSWORD = "innovatinsa-piwio-5432"
 load_dotenv()  # 确保.env文件中有正确的值
@@ -33,30 +33,30 @@ def on_connect(client, userdata, flags, reason_code, properties):
 def on_message(client, userdata, msg):
     try:
         payload = json.loads(msg.payload.decode())
-        id = payload.get("id")
+        #id = payload.get("id")
         sensor_id = payload.get("sensor_id")
-        plant_id = payload.get("plant_id")
-        sensor_name = payload.get("sensor_name")
-        time_stamp = payload.get("time_stamp")
+        #plant_id = payload.get("plant_id")
+        #sensor_name = payload.get("sensor_name")
+        time_stamp = payload.get("timestamp")
         temperature = payload.get("temperature")
         humidity = payload.get("humidity")
         soil_moisture = payload.get("soil_moisture")
         is_anomaly = payload.get("is_anomaly")
 
-        save_to_db(id, sensor_id, plant_id, sensor_name, time_stamp,
+        save_to_db(sensor_id, time_stamp,
                    temperature, humidity, soil_moisture, is_anomaly)
     except Exception as e:
         logging.error(f"消息处理失败: {e}")
 
 
-def save_to_db(id, sensor_id, plant_id, sensor_name, time_stamp,
+def save_to_db(sensor_id, time_stamp,
                temperature, humidity, soil_moisture, is_anomaly):
+    db = None
     try:
-        # 确保数据库名称已设置
         if not DB_NAME:
             raise ValueError("数据库名称未配置")
 
-        db = pymysql.connect(
+        db = psycopg2.connect(
             host=DB_HOST,
             user=DB_USER,
             password=DB_PASSWORD,
@@ -64,23 +64,28 @@ def save_to_db(id, sensor_id, plant_id, sensor_name, time_stamp,
             port=DB_PORT
         )
         cursor = db.cursor()
+        # 不插入 id，让数据库自增
         sql = """
-            INSERT INTO rawdata_from_sensors 
-            (id, sensor_id, plant_id, sensor_name, time_stamp, 
-             temperature, humidity, soil_moisture, is_anomaly)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO rawdata_from_sensors
+            (sensor_id, time_stamp, temperature, humidity, soil_moisture, is_anomaly)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id
         """
-        cursor.execute(sql, (id, sensor_id, plant_id, sensor_name, time_stamp,
+        cursor.execute(sql, (sensor_id, time_stamp,
                              temperature, humidity, soil_moisture, is_anomaly))
+        new_id = cursor.fetchone()[0]
         db.commit()
-        print(f"插入成功: {id}")
-    except pymysql.Error as e:
+        print(f"插入成功，生成的 id 为: {new_id}")
+    except psycopg2.Error as e:
         logging.error(f"数据库错误: {e}")
-        if db: db.rollback()
+        if db:
+            db.rollback()
     except Exception as e:
         logging.error(f"保存到数据库失败: {e}")
     finally:
-        if db: db.close()
+        if db:
+            db.close()
+
 
 
 def on_disconnect(client, userdata, flags, reason_code, properties):

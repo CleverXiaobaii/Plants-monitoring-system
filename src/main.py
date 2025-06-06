@@ -10,16 +10,17 @@ def main():
     if not db_manager.initialize_database():
         print("❌ initializing failed, programme exits")
         return
-    
+
     # 主程序逻辑
-    print("🖥️ 应用程序运行中...")
+    print("🖥️ 应用程序运"
+          "行中...")
     # 你的业务逻辑代码
-    thread_listen = threading.Thread(target=listen.listening())
-    thread_calc = threading.Thread(target=calc.main())
+    thread_listen = threading.Thread(target=listen.listening)
+    thread_calc = threading.Thread(target=calc.main)
 
     thread_listen.start()
     thread_calc.start()
-    
+
     print("🛑 应用程序结束")
 
 if __name__ == "__main__":

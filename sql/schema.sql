@@ -1,8 +1,6 @@
 CREATE TABLE IF NOT EXISTS rawdata_from_sensors (
     id SERIAL PRIMARY KEY,
     sensor_id INTEGER NOT NULL,
-    plant_id INTEGER NOT NULL,
-    sensor_name VARCHAR(50) NOT NULL,
     time_stamp TIMESTAMP NOT NULL,
     temperature FLOAT NOT NULL,
     humidity FLOAT NOT NULL,

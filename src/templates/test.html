@@ -1,114 +1,731 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
-    <meta charset="UTF-8" />
-    <title>实时植物监测</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #eef2f3;
-            padding: 2em;
-            color: #333;
-        }
-        .container {
-            background: #fff;
-            max-width: 600px;
-            margin: auto;
-            padding: 2em;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            text-align: center;
-            color: #2c7be5;
-        }
-        .data-field {
-            margin: 1em 0;
-            font-size: 1.2em;
-        }
-        .label {
-            font-weight: bold;
-        }
-        #error {
-            color: red;
-            margin-top: 1em;
-            text-align: center;
-        }
-        button {
-            display: block;
-            width: 100%;
-            padding: 1em;
-            background: #2c7be5;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 1em;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #1a68d1;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>植物传感器实时监测</h1>
-
-        <div id="data-container">
-            <!-- JavaScript填充数据 -->
-        </div>
-
-        <button id="refresh-btn">🔄 获取实时数据</button>
-        <div id="error"></div>
-    </div>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelligent Plant Monitoring System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <script>
-        const refreshBtn = document.getElementById('refresh-btn');
-        const dataContainer = document.getElementById('data-container');
-        const errorDiv = document.getElementById('error');
-
-        function displayData(data) {
-            if (!Array.isArray(data)) {
-                errorDiv.textContent = "返回数据格式不正确。";
-                return;
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36D399',
+                        warning: '#FFAB00',
+                        danger: '#F87272',
+                        dark: '#1E293B',
+                        light: '#F8FAFC'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                },
             }
+        }
+    </script>
 
-            dataContainer.innerHTML = '';
+    <!-- 初始化植物数据 -->
+    <script>
+        const plantData = {
+            plants: [
+                {
+                    id: 'plant-1',
+                    temperature: {
+                        current: 0,
+                        history: [],
+                        thresholds: { min: 18, max: 28 }
+                    },
+                    humidity: {
+                        current: 0,
+                        history: [],
+                        thresholds: { min: 40, max: 70 }
+                    },
+                    soilMoisture: {
+                        current: 0,
+                        history: [],
+                        thresholds: { min: 30, max: 70 }
+                    },
+                    alerts: []
+                },
+                {
+                    id: 'plant-2',
+                    temperature: {
+                        current: 0,
+                        history: [],
+                        thresholds: { min: 18, max: 28 }
+                    },
+                    humidity: {
+                        current: 0,
+                        history: [],
+                        thresholds: { min: 40, max: 70 }
+                    },
+                    soilMoisture: {
+                        current: 0,
+                        history: [],
+                        thresholds: { min: 30, max: 70 }
+                    },
+                    alerts: []
+                },
+                {
+                    id: 'plant-3',
+                    temperature: {
+                        current: 0,
+                        history: [],
+                        thresholds: { min: 18, max: 28 }
+                    },
+                    humidity: {
+                        current: 0,
+                        history: [],
+                        thresholds: { min: 40, max: 70 }
+                    },
+                    soilMoisture: {
+                        current: 0,
+                        history: [],
+                        thresholds: { min: 30, max: 70 }
+                    },
+                    alerts: []
+                },
+                {
+                    id: 'plant-4',
+                    temperature: {
+                        current: 0,
+                        history: [],
+                        thresholds: { min: 18, max: 28 }
+                    },
+                    humidity: {
+                        current: 0,
+                        history: [],
+                        thresholds: { min: 40, max: 70 }
+                    },
+                    soilMoisture: {
+                        current: 0,
+                        history: [],
+                        thresholds: { min: 30, max: 70 }
+                    },
+                    alerts: []
+                },
+                {
+                    id: 'plant-5',
+                    temperature: {
+                        current: 0,
+                        history: [],
+                        thresholds: { min: 18, max: 28 }
+                    },
+                    humidity: {
+                        current: 0,
+                        history: [],
+                        thresholds: { min: 40, max: 70 }
+                    },
+                    soilMoisture: {
+                        current: 0,
+                        history: [],
+                        thresholds: { min: 30, max: 70 }
+                    },
+                    alerts: []
+                }
+            ]
+        };
+    </script>
 
-            data.forEach(sensor => {
-                const block = document.createElement('div');
-                block.className = 'data-field';
-                block.innerHTML = `
-                    <div><span class="label">传感器 ID:</span> ${sensor.sensor_id}</div>
-                    <div><span class="label">温度:</span> ${sensor.temperature} °C</div>
-                    <div><span class="label">湿度:</span> ${sensor.humidity} %</div>
-                    <div><span class="label">土壤湿度:</span> ${sensor.soil_moisture} %</div>
-                    <div><span class="label">时间:</span> ${new Date(sensor.timestamp).toLocaleString()}</div>
-                    <hr />
-                `;
-                dataContainer.appendChild(block);
+    <!-- 数据接收模块 - 完整实现 -->
+    <script>
+        const DataReceiver = {
+            // 轮询定时器
+            pollingTimer: null,
+
+            // 初始化数据接收
+            init() {
+                this.startPolling();
+                console.log('Using polling as a data source');
+            },
+
+            // 开始轮询数据
+            startPolling() {
+                console.log('使用轮询方式获取数据');
+
+                // 设置轮询间隔(毫秒)
+                const pollingInterval = 5000;
+
+                // 初始获取数据
+                this.fetchData();
+
+                // 设置定时获取
+                this.pollingTimer = setInterval(() => {
+                    this.fetchData();
+                }, pollingInterval);
+            },
+
+            // 使用Fetch API获取数据
+            fetchData() {
+                // 修改为 Flask 服务的 URL
+                const apiUrl = 'http://127.0.0.1:5000/sensor-data';
+
+                fetch(apiUrl)
+                   .then(response => {
+                        if (!response.ok) {
+                            throw new Error('网络响应错误');
+                        }
+                        return response.json();
+                    })
+                   .then(data => {
+                        console.log('获取到轮询数据:', data);
+                        this.updatePlantData(data);
+                    })
+                   .catch(error => {
+                        console.error('获取数据失败:', error);
+                    });
+            },
+
+            // 更新植物数据
+            updatePlantData(data) {
+                // 假设 data 格式与 plantData 相似
+                if (data) {
+                    // 更新所有植物数据
+                    data.forEach(newPlant => {
+                        const existingPlant = plantData.plants.find(p => p.id === newPlant.sensor_id);
+
+                        if (existingPlant) {
+                            // 更新当前值
+                            if (newPlant.temperature) {
+                                existingPlant.temperature.current = newPlant.temperature;
+                                // 添加到历史记录
+                                existingPlant.temperature.history.push(newPlant.temperature);
+                                // 保持历史记录长度一致
+                                if (existingPlant.temperature.history.length > 24) {
+                                    existingPlant.temperature.history.shift();
+                                }
+                            }
+
+                            if (newPlant.humidity) {
+                                existingPlant.humidity.current = newPlant.humidity;
+                                existingPlant.humidity.history.push(newPlant.humidity);
+                                if (existingPlant.humidity.history.length > 24) {
+                                    existingPlant.humidity.history.shift();
+                                }
+                            }
+
+                            if (newPlant.soil_moisture) {
+                                existingPlant.soilMoisture.current = newPlant.soil_moisture;
+                                existingPlant.soilMoisture.history.push(newPlant.soil_moisture);
+                                if (existingPlant.soilMoisture.history.length > 24) {
+                                    existingPlant.soilMoisture.history.shift();
+                                }
+                            }
+
+                            // 更新警报
+                            if (newPlant.alerts) {
+                                existingPlant.alerts = newPlant.alerts;
+                            }
+                        }
+                    });
+
+                    // 更新UI
+                    updateDashboard();
+                    updatePlantCharts();
+                }
+            },
+
+            // 停止数据接收
+            stop() {
+                // 清除轮询定时器
+                if (this.pollingTimer) {
+                    clearInterval(this.pollingTimer);
+                    this.pollingTimer = null;
+                }
+            },
+
+            // 手动刷新数据
+            refreshData() {
+                console.log('手动刷新数据');
+                // 立即触发一次数据获取
+                this.fetchData();
+
+                // 显示刷新动画
+                const refreshButton = document.querySelector('button.bg-primary');
+                const icon = refreshButton.querySelector('i');
+                icon.classList.add('fa-spin');
+
+                setTimeout(() => {
+                    icon.classList.remove('fa-spin');
+                }, 1000);
+            }
+        };
+    </script>
+
+    <!-- 更新仪表盘函数 -->
+    <script>
+        function updateDashboard() {
+            // 计算平均温度
+            const totalTemperature = plantData.plants.reduce((sum, plant) => sum + plant.temperature.current, 0);
+            const avgTemperature = totalTemperature / plantData.plants.length;
+            document.getElementById('avg-temp').textContent = avgTemperature.toFixed(1);
+
+            // 计算平均湿度
+            const totalHumidity = plantData.plants.reduce((sum, plant) => sum + plant.humidity.current, 0);
+            const avgHumidity = totalHumidity / plantData.plants.length;
+            document.getElementById('avg-humidity').textContent = avgHumidity.toFixed(1);
+
+            // 计算平均土壤湿度
+            const totalSoilMoisture = plantData.plants.reduce((sum, plant) => sum + plant.soilMoisture.current, 0);
+            const avgSoilMoisture = totalSoilMoisture / plantData.plants.length;
+            document.getElementById('avg-soil').textContent = avgSoilMoisture.toFixed(1);
+
+            // 计算警报数量
+            const alertCount = plantData.plants.reduce((sum, plant) => sum + plant.alerts.length, 0);
+            document.getElementById('alert-count').textContent = alertCount;
+
+            // 更新进度条
+            const tempProgress = (avgTemperature - 18) / (28 - 18) * 100;
+            document.getElementById('temp-progress').style.width = `${Math.min(Math.max(tempProgress, 0), 100)}%`;
+
+            const humidityProgress = (avgHumidity - 40) / (70 - 40) * 100;
+            document.getElementById('humidity-progress').style.width = `${Math.min(Math.max(humidityProgress, 0), 100)}%`;
+
+            const soilProgress = (avgSoilMoisture - 30) / (70 - 30) * 100;
+            document.getElementById('soil-progress').style.width = `${Math.min(Math.max(soilProgress, 0), 100)}%`;
+        }
+    </script>
+
+    <!-- 更新植物图表函数 -->
+    <script>
+        let plantEnvironmentChart;
+        let plantSoilChart;
+
+        function initPlantCharts() {
+            const plantEnvironmentCtx = document.getElementById('plant-environment-chart').getContext('2d');
+            plantEnvironmentChart = new Chart(plantEnvironmentCtx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: 24 }, (_, i) => i),
+                    datasets: [
+                        {
+                            label: 'Temperature',
+                            borderColor: 'rgb(255, 99, 132)',
+                            data: [],
+                            fill: false
+                        },
+                        {
+                            label: 'Humidity',
+                            borderColor: 'rgb(54, 162, 235)',
+                            data: [],
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            const plantSoilCtx = document.getElementById('plant-soil-chart').getContext('2d');
+            plantSoilChart = new Chart(plantSoilCtx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: 24 }, (_, i) => i),
+                    datasets: [
+                        {
+                            label: 'Soil Moisture',
+                            borderColor: 'rgb(255, 205, 86)',
+                            data: [],
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
             });
         }
 
-        function fetchSensorData() {
-            errorDiv.textContent = '正在获取数据...';
-            fetch('/sensor-data')
-                .then(res => {
-                    if (!res.ok) throw new Error('网络请求失败');
-                    return res.json();
-                })
-                .then(data => {
-                    errorDiv.textContent = '';
-                    displayData(data);
-                })
-                .catch(err => {
-                    console.error(err);
-                    errorDiv.textContent = '获取数据失败，请检查服务器或网络连接。';
-                });
-        }
+        function updatePlantCharts() {
+            const selectedPlantId = document.getElementById('plant-select').value;
+            const selectedPlant = plantData.plants.find(plant => plant.id === selectedPlantId);
 
-        refreshBtn.addEventListener('click', fetchSensorData);
+            if (selectedPlant) {
+                // 更新环境参数图表
+                plantEnvironmentChart.data.datasets[0].data = selectedPlant.temperature.history;
+                plantEnvironmentChart.data.datasets[1].data = selectedPlant.humidity.history;
+                plantEnvironmentChart.update();
+
+                // 更新土壤湿度图表
+                plantSoilChart.data.datasets[0].data = selectedPlant.soilMoisture.history;
+                plantSoilChart.update();
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            .animate-pulse-slow {
+                animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            }
+            .data-card {
+                @apply bg-white rounded-xl p-6 card-shadow transition-all duration-300 hover:shadow-lg;
+            }
+            .status-badge {
+                @apply px-2 inline-flex text-xs leading-5 font-semibold rounded-full;
+            }
+            .alert-badge {
+                @apply px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full;
+            }
+            .normal {
+                @apply bg-green-100 text-green-800;
+            }
+            .warning {
+                @apply bg-yellow-100 text-yellow-800;
+            }
+            .danger {
+                @apply bg-red-100 text-red-800;
+            }
+        }
+    </style>
+</head>
+
+<body class="font-inter bg-gray-50 text-dark min-h-screen flex flex-col">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-leaf text-primary text-2xl"></i>
+                <h1 class="text-xl font-bold text-primary">Intelligent Plant Monitoring System</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#dashboard" class="text-gray-700 hover:text-primary transition-colors duration-300 font-medium">Dashboard</a>
+                    <a href="#plants" class="text-gray-700 hover:text-primary transition-colors duration-300 font-medium">Plant monitoring</a>
+                    <a href="#analysis" class="text-gray-700 hover:text-primary transition-colors duration-300 font-medium">Data analysis</a>
+                    <a href="#history" class="text-gray-700 hover:text-primary transition-colors duration-300 font-medium">History</a>
+                </nav>
+                <button id="refresh-data-btn" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center">
+                    <i class="fa fa-refresh mr-2"></i>Refresh Data
+                </button>
+                <button class="md:hidden text-gray-700 hover:text-primary transition-colors duration-300">
+                    <i class="fa fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-6">
+        <!-- 状态概览 -->
+        <div id="dashboard" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="data-card">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-gray-500 text-sm">Average temperature</p>
+                        <h3 class="text-3xl font-bold" id="avg-temp">-</h3>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i class="fa fa-thermometer-half text-primary"></i>
+                    </div>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="temp-progress" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">Ideal range: 18°C - 28°C</p>
+            </div>
+
+            <div class="data-card">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-gray-500 text-sm">Average humidity</p>
+                        <h3 class="text-3xl font-bold" id="avg-humidity">-</h3>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i class="fa fa-tint text-primary"></i>
+                    </div>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="humidity-progress" class="bg-primary h-2 rounded-full" style="width: 0%"></div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">Ideal range: 40% - 70%</p>
+            </div>
+
+            <div class="data-card">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-gray-500 text-sm">Average soil moisture</p>
+                        <h3 class="text-3xl font-bold" id="avg-soil">-</h3>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
+                        <i class="fa fa-tree text-yellow-500"></i>
+                    </div>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="soil-progress" class="bg-yellow-500 h-2 rounded-full" style="width: 0%"></div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">Ideal range: 30% - 70%</p>
+            </div>
+
+            <div class="data-card">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <p class="text-gray-500 text-sm">Number of alarms</p>
+                        <h3 class="text-3xl font-bold text-danger" id="alert-count">-</h3>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                        <i class="fa fa-exclamation-triangle text-danger"></i>
+                    </div>
+                </div>
+                <div class="flex space-x-1 mt-2">
+                    <span class="alert-badge danger">High</span>
+                    <span class="alert-badge warning">Midium</span>
+                    <span class="alert-badge normal">Low</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 植物监测 -->
+        <div id="plants" class="bg-white rounded-xl p-6 card-shadow mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-semibold">Plant Monitoring Details</h2>
+                <div class="flex space-x-2">
+                    <select id="plant-select" class="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="plant-1">Plant1 (ID: PL001)</option>
+                        <option value="plant-2">Plant2 (ID: PL002)</option>
+                        <option value="plant-3">Plant3 (ID: PL003)</option>
+                        <option value="plant-4">Plant4 (ID: PL004)</option>
+                        <option value="plant-5">Plant5 (ID: PL005)</option>
+                    </select>
+                    <select id="time-range" class="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
+                        <option value="1h">Last 1 hour</option>
+                        <option value="6h">Last 6 hour</option>
+                        <option value="12h">Last 12 hour</option>
+                        <option value="24h">Last 24 hour</option>
+                        <option value="7d">Last 1 week</option>
+                    </select>
+                    <button id="customize-threshold" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm transition-colors duration-300">
+                        <i class="fa fa-sliders mr-1"></i>Custom Thresholds
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="data-card">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-gray-500 text-sm">Current Temperature</p>
+                            <div class="flex items-center">
+                                <h3 class="text-3xl font-bold" id="current-plant-temp">-</h3>
+                                <span id="temp-status" class="ml-2 status-badge normal">Normal</span>
+                            </div>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <i class="fa fa-thermometer-half text-primary"></i>
+                        </div>
+                    </div>
+                    <div class="space-y-2 mt-4">
+                        <div class="flex justify-between text-sm">
+                            <span>1 hour average:</span>
+                            <span id="temp-1h-avg">-</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span>Variance:</span>
+                            <span id="temp-variance">-</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span>Highest value:</span>
+                            <span id="temp-max">-</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span>Minimum value:</span>
+                            <span id="temp-min">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-card">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-gray-500 text-sm">Current Humidity</p>
+                            <div class="flex items-center">
+                                <h3 class="text-3xl font-bold" id="current-plant-humidity">-</h3>
+                                <span id="humidity-status" class="ml-2 status-badge normal">Normal</span>
+                            </div>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                            <i class="fa fa-tint text-primary"></i>
+                        </div>
+                    </div>
+                    <div class="space-y-2 mt-4">
+                        <div class="flex justify-between text-sm">
+                            <span>1 hour average:</span>
+                            <span id="humidity-1h-avg">-</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span>Variance:</span>
+                            <span id="humidity-variance">-</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span>Highest value:</span>
+                            <span id="humidity-max">-</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span>Minimum value:</span>
+                            <span id="humidity-min">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-card">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-gray-500 text-sm">Current Soil Moisture</p>
+                            <div class="flex items-center">
+                                <h3 class="text-3xl font-bold" id="current-plant-soil">-</h3>
+                                <span id="soil-status" class="ml-2 status-badge normal">Normal</span>
+                            </div>
+                        </div>
+                        <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
+                            <i class="fa fa-tree text-yellow-500"></i>
+                        </div>
+                    </div>
+                    <div class="space-y-2 mt-4">
+                        <div class="flex justify-between text-sm">
+                            <span>1 hour average:</span>
+                            <span id="soil-1h-avg">-</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span>Variance:</span>
+                            <span id="soil-variance">-</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span>Highest value:</span>
+                            <span id="soil-max">-</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span>Minimum value:</span>
+                            <span id="soil-min">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <h3 class="text-base font-semibold mb-4">Environmental parameter trends</h3>
+                    <div class="h-64">
+                        <canvas id="plant-environment-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 card-shadow">
+                    <h3 class="text-base font-semibold mb-4">Soil moisture trends</h3>
+                    <div class="h-64">
+                        <canvas id="plant-soil-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图表区域 -->
+        <div id="analysis" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white rounded-xl p-6 card-shadow">
+                <!-- 此处可添加更多图表内容 -->
+            </div>
+        </div>
+    </main>
+
+    <!-- 模态框 - 自定义阈值 -->
+    <div id="threshold-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 card-shadow w-96">
+            <h2 class="text-lg font-semibold mb-4">Custom Thresholds</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="temp-min-threshold" class="block text-sm font-medium text-gray-700">Minimum Temperature</label>
+                    <input type="number" id="temp-min-threshold" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                </div>
+                <div>
+                    <label for="temp-max-threshold" class="block text-sm font-medium text-gray-700">Maximum Temperature</label>
+                    <input type="number" id="temp-max-threshold" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                </div>
+                <div>
+                    <label for="humidity-min-threshold" class="block text-sm font-medium text-gray-700">Minimum Humidity</label>
+                    <input type="number" id="humidity-min-threshold" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                </div>
+                <div>
+                    <label for="humidity-max-threshold" class="block text-sm font-medium text-gray-700">Maximum Humidity</label>
+                    <input type="number" id="humidity-max-threshold" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                </div>
+                <div>
+                    <label for="soil-min-threshold" class="block text-sm font-medium text-gray-700">Minimum Soil Moisture</label>
+                    <input type="number" id="soil-min-threshold" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                </div>
+                <div>
+                    <label for="soil-max-threshold" class="block text-sm font-medium text-gray-700">Maximum Soil Moisture</label>
+                    <input type="number" id="soil-max-threshold" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                </div>
+            </div>
+            <div class="flex justify-end mt-6">
+                <button id="close-modal" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-sm transition-colors duration-300">Close</button>
+                <button id="save-thresholds" class="ml-4 px-3 py-2 bg-primary hover:bg-primary/90 text-white rounded-md text-sm transition-all duration-300">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('load', () => {
+            initPlantCharts();
+            DataReceiver.init();
+            updateDashboard();
+            updatePlantCharts();
+
+            // 绑定手动刷新按钮事件
+            const refreshButton = document.getElementById('refresh-data-btn');
+            refreshButton.addEventListener('click', () => {
+                DataReceiver.refreshData();
+            });
+
+            // 绑定自定义阈值按钮事件
+            const customizeThresholdButton = document.getElementById('customize-threshold');
+            const thresholdModal = document.getElementById('threshold-modal');
+            const closeModalButton = document.getElementById('close-modal');
+            const saveThresholdsButton = document.getElementById('save-thresholds');
+
+            customizeThresholdButton.addEventListener('click', () => {
+                thresholdModal.classList.remove('hidden');
+            });
+
+            closeModalButton.addEventListener('click', () => {
+                thresholdModal.classList.add('hidden');
+            });
+
+            saveThresholdsButton.addEventListener('click', () => {
+                // 保存自定义阈值
+                const tempMinThreshold = parseInt(document.getElementById('temp-min-threshold').value);
+                const tempMaxThreshold = parseInt(document.getElementById('temp-max-threshold').value);
+                const humidityMinThreshold = parseInt(document.getElementById('humidity-min-threshold').value);
+                const humidityMaxThreshold = parseInt(document.getElementById('humidity-max-threshold').value);
+                const soilMinThreshold = parseInt(document.getElementById('soil-min-threshold').value);
+                const soilMaxThreshold = parseInt(document.getElementById('soil-max-threshold').value);
+
+                plantData.plants.forEach(plant => {
+                    plant.temperature.thresholds.min = tempMinThreshold;
+                    plant.temperature.thresholds.max = tempMaxThreshold;
+                    plant.humidity.thresholds.min = humidityMinThreshold;
+                    plant.humidity.thresholds.max = humidityMaxThreshold;
+                    plant.soilMoisture.thresholds.min = soilMinThreshold;
+                    plant.soilMoisture.thresholds.max = soilMaxThreshold;
+                });
+
+                thresholdModal.classList.add('hidden');
+            });
+        });
     </script>
 </body>
+
 </html>

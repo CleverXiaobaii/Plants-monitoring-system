@@ -58,7 +58,7 @@ def latest_data(sensor_id):
 
     return jsonify(sensor_data)
 
-@app.route('/summary', methods=['GET']) # return average temperature
+@app.route('/summary', methods=['GET'])
 def avg_temp():
     conn = get_db_connection()
     cur = conn.cursor()
@@ -91,6 +91,63 @@ def avg_temp():
         cur.close()
         conn.close()
 
+    return jsonify(result)
+
+@app.route('/stats/', methods=['GET'])
+def stats():
+    sensor_id = request.args.get('sensor_id', type=int)
+    hours = request.args.get('hours', default=1, type=int)
+    if sensor_id is None or hours is None:
+        return jsonify({"error": "Missing sensor_id or hours parameter"}), 400
+    
+    sensor_id = int(sensor_id)
+    hours = int(hours)
+        
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("""
+            SELECT
+                COUNT(*) AS count,
+                AVG(temperature) AS avg_temp,
+                AVG(humidity) AS avg_humidity,
+                AVG(soil_moisture) AS avg_soil_moisture,
+                MIN(temperature) AS min_temp,
+                MIN(humidity) AS min_humidity,
+                MIN(soil_moisture) AS min_soil_moisture,
+                MAX(temperature) AS max_temp,
+                MAX(humidity) AS max_humidity,
+                MAX(soil_moisture) AS max_soil_moisture,
+                STDDEV(temperature) AS std_temp,
+                STDDEV(humidity) AS std_humidity,
+                STDDEV(soil_moisture) AS std_soil_moisture
+            FROM rawdata_from_sensors
+            WHERE sensor_id = %s AND time_stamp >= NOW() - INTERVAL '%s hours';
+        """, (sensor_id, hours))
+        row = cur.fetchone()
+        if row is None or all(val is None for val in row):
+            return jsonify({"error": "Data unavailable"}), 404
+        result = {
+            "count": row[0],
+            "avg_temp": row[1],
+            "avg_humidity": row[2],
+            "avg_soil_moisture": row[3],
+            "min_temp": row[4],
+            "min_humidity": row[5],
+            "min_soil_moisture": row[6],
+            "max_temp": row[7],
+            "max_humidity": row[8],
+            "max_soil_moisture": row[9],
+            "std_temp": row[10],
+            "std_humidity": row[11],
+            "std_soil_moisture": row[12]
+        }
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+        
     return jsonify(result)
 
 if __name__ == '__main__':

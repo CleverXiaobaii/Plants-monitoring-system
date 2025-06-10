@@ -407,11 +407,11 @@
                 <h2 class="text-lg font-semibold">Plant Monitoring Details</h2>
                 <div class="flex space-x-2">
                     <select id="plant-select" class="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary">
-                        <!-- 生成三十个植株选项 -->
-                        <!-- 修正：正确生成30个植株选项 -->
+                        <!-- 动态生成30个植株选项 -->
                         <script>
                             for (let i = 1; i <= 30; i++) {
-                                document.write(`<option value="plant-${i}">Plant${i} (ID: PL00${i})</option>`);
+                                const plantId = `PL${i.toString().padStart(3, '0')}`;
+                                document.write(`<option value="plant-${i}">Plant${i} (ID: ${plantId})</option>`);
                             }
                         </script>
                     </select>
@@ -674,298 +674,586 @@
     </div>
 
     <script>
-        // 生成三十个植株的数据
+        // 植物数据 - 扩展到30个植株
         const plantData = {
-            plants: Array.from({ length: 30 }, (_, index) => {
-                const id = `plant-${index + 1}`;
-                const name = `plant${index + 1}`;
-                return {
-                    id,
-                    name,
-                    type: 'A',
-                    temperature: {
-                        current: Math.random() * 7 + 21, // 21-28°C
-                        history: Array.from({length: 24}, () => Math.random() * 7 + 21), // 21-28°C
-                        thresholds: { min: 16, max: 30 }
-                    },
-                    humidity: {
-                        current: Math.random() * 20 + 40, // 40-60%
-                        history: Array.from({length: 24}, () => Math.random() * 20 + 40), // 40-60%
-                        thresholds: { min: 35, max: 65 }
-                    },
-                    soilMoisture: {
-                        current: Math.random() * 15 + 40, // 40-55%
-                        history: Array.from({length: 24}, () => Math.random() * 15 + 40), // 40-55%
-                        thresholds: { min: 30, max: 60 }
-                    },
-                    alerts: []
-                };
-            })
+            plants: [],
+            timeLabels: Array.from({length: 24}, (_, i) => `${i}:00`)
         };
 
-        // 初始化数据接收
-        DataReceiver.init();
-
-        // 手动刷新数据按钮事件绑定
-        document.getElementById('refresh-data-btn').addEventListener('click', () => {
-            DataReceiver.refreshData();
-        });
-
-        // 添加缺失的UI更新函数
-        function updateDashboard() {
-            // 计算平均值
-            const temps = plantData.plants.map(p => p.temperature.current);
-            const humiditys = plantData.plants.map(p => p.humidity.current);
-            const soils = plantData.plants.map(p => p.soilMoisture.current);
+        // 生成30个植株的数据
+        for (let i = 1; i <= 30; i++) {
+            const plantType = i <= 10 ? 'A' : i <= 20 ? 'B' : 'C';
+            const plantName = `Plant${i}`;
             
-            const avgTemp = temps.reduce((a, b) => a + b, 0) / temps.length;
-            const avgHumidity = humiditys.reduce((a, b) => a + b, 0) / humiditys.length;
-            const avgSoil = soils.reduce((a, b) => a + b, 0) / soils.length;
+            // 为不同植物类型设置不同的阈值
+            let tempThresholds, humThresholds, soilThresholds;
             
-            // 计算警报数量
-            const alertCount = plantData.plants.reduce((count, plant) => {
-                return count + plant.alerts.length;
-            }, 0);
-            
-            // 更新仪表盘
-            document.getElementById('avg-temp').textContent = avgTemp.toFixed(1) + '°C';
-            document.getElementById('avg-humidity').textContent = avgHumidity.toFixed(1) + '%';
-            document.getElementById('avg-soil').textContent = avgSoil.toFixed(1) + '%';
-            document.getElementById('alert-count').textContent = alertCount;
-            
-            // 更新进度条
-            document.getElementById('temp-progress').style.width = `${((avgTemp - 18) / (28 - 18)) * 100}%`;
-            document.getElementById('humidity-progress').style.width = `${((avgHumidity - 40) / (70 - 40)) * 100}%`;
-            document.getElementById('soil-progress').style.width = `${((avgSoil - 30) / (70 - 30)) * 100}%`;
-        }
-
-        // 更新单株植物监控图表
-        function updatePlantCharts() {
-            const selectedPlantId = document.getElementById('plant-select').value;
-            const selectedPlant = plantData.plants.find(p => p.id === selectedPlantId);
-            
-            if (!selectedPlant) return;
-            
-            // 更新当前值
-            document.getElementById('current-plant-temp').textContent = selectedPlant.temperature.current.toFixed(1) + '°C';
-            document.getElementById('current-plant-humidity').textContent = selectedPlant.humidity.current.toFixed(1) + '%';
-            document.getElementById('current-plant-soil').textContent = selectedPlant.soilMoisture.current.toFixed(1) + '%';
-            
-            // 更新状态标签
-            updateStatusBadge('temp-status', selectedPlant.temperature.current, selectedPlant.temperature.thresholds);
-            updateStatusBadge('humidity-status', selectedPlant.humidity.current, selectedPlant.humidity.thresholds);
-            updateStatusBadge('soil-status', selectedPlant.soilMoisture.current, selectedPlant.soilMoisture.thresholds);
-            
-            // 更新1小时平均值和统计数据
-            updateStats('temp', selectedPlant.temperature.history);
-            updateStats('humidity', selectedPlant.humidity.history);
-            updateStats('soil', selectedPlant.soilMoisture.history);
-            
-            // 更新图表
-            updatePlantEnvironmentChart(selectedPlant);
-            updatePlantSoilChart(selectedPlant);
-        }
-
-        // 更新状态标签
-        function updateStatusBadge(elementId, value, thresholds) {
-            const element = document.getElementById(elementId);
-            
-            if (value < thresholds.min || value > thresholds.max) {
-                element.className = 'ml-2 status-badge danger';
-                element.textContent = 'Abnormal';
+            if (plantType === 'A') {
+                tempThresholds = { min: 18, max: 28 };
+                humThresholds = { min: 40, max: 70 };
+                soilThresholds = { min: 30, max: 70 };
+            } else if (plantType === 'B') {
+                tempThresholds = { min: 20, max: 30 };
+                humThresholds = { min: 50, max: 80 };
+                soilThresholds = { min: 40, max: 80 };
             } else {
-                element.className = 'ml-2 status-badge normal';
-                element.textContent = 'Normal';
-            }
-        }
-
-        // 更新统计数据
-        function updateStats(prefix, history) {
-            const recentValues = history.slice(-4); // 最近4个值，假设每15分钟一次
-            const avg = recentValues.reduce((a, b) => a + b, 0) / recentValues.length;
-            const max = Math.max(...history);
-            const min = Math.min(...history);
-            const variance = calculateVariance(history);
-            
-            document.getElementById(`${prefix}-1h-avg`).textContent = avg.toFixed(1) + (prefix === 'temp' ? '°C' : '%');
-            document.getElementById(`${prefix}-max`).textContent = max.toFixed(1) + (prefix === 'temp' ? '°C' : '%');
-            document.getElementById(`${prefix}-min`).textContent = min.toFixed(1) + (prefix === 'temp' ? '°C' : '%');
-            document.getElementById(`${prefix}-variance`).textContent = variance.toFixed(2);
-        }
-
-        // 计算方差
-        function calculateVariance(data) {
-            const mean = data.reduce((a, b) => a + b, 0) / data.length;
-            const squaredDiffs = data.map(num => {
-                const diff = num - mean;
-                return diff * diff;
-            });
-            return squaredDiffs.reduce((a, b) => a + b, 0) / data.length;
-        }
-
-        // 更新植物环境参数图表
-        function updatePlantEnvironmentChart(plant) {
-            const ctx = document.getElementById('plant-environment-chart').getContext('2d');
-            
-            // 清除现有图表
-            if (window.plantEnvironmentChart) {
-                window.plantEnvironmentChart.destroy();
+                tempThresholds = { min: 15, max: 25 };
+                humThresholds = { min: 30, max: 60 };
+                soilThresholds = { min: 20, max: 60 };
             }
             
-            // 创建时间标签
-            const labels = Array.from({length: 24}, (_, i) => {
-                const hour = new Date();
-                hour.setHours(hour.getHours() - 23 + i);
-                return hour.getHours() + ':00';
-            });
+            // 创建初始历史数据
+            const createHistory = (min, max) => {
+                return Array.from({length: 24}, () => Math.random() * (max - min) + min);
+            };
             
-            // 创建图表
-            window.plantEnvironmentChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Temperature (°C)',
-                            data: plant.temperature.history,
-                            borderColor: '#165DFF',
-                            backgroundColor: 'rgba(22, 93, 255, 0.1)',
-                            tension: 0.3,
-                            fill: true
-                        },
-                        {
-                            label: 'Humidity (%)',
-                            data: plant.humidity.history,
-                            borderColor: '#36D399',
-                            backgroundColor: 'rgba(54, 211, 153, 0.1)',
-                            tension: 0.3,
-                            fill: true,
-                            yAxisID: 'y1'
-                        }
-                    ]
+            plantData.plants.push({
+                id: `plant-${i}`,
+                name: plantName,
+                type: plantType,
+                temperature: {
+                    current: Math.random() * 10 + 20, // 20-30°C
+                    history: createHistory(tempThresholds.min, tempThresholds.max),
+                    thresholds: tempThresholds
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false
-                        }
+                humidity: {
+                    current: Math.random() * 30 + 40, // 40-70%
+                    history: createHistory(humThresholds.min, humThresholds.max),
+                    thresholds: humThresholds
+                },
+                soilMoisture: {
+                    current: Math.random() * 40 + 30, // 30-70%
+                    history: createHistory(soilThresholds.min, soilThresholds.max),
+                    thresholds: soilThresholds
+                },
+                alerts: i % 5 === 0 ? [
+                    { time: `2025-06-03 ${Math.floor(Math.random()*24)}:${Math.floor(Math.random()*60)}`, 
+                      level: 'warning', 
+                      message: '参数异常' }
+                ] : []
+            });
+        }
+
+        // 初始化环境参数图表
+        let plantEnvironmentChart;
+        let plantSoilChart;
+        let overallTrendChart;
+        let overallSoilChart;
+
+        function initPlantCharts() {
+            // 植物环境参数图表
+            plantEnvironmentChart = new Chart(
+                document.getElementById('plant-environment-chart'),
+                {
+                    type: 'line',
+                    data: {
+                        labels: plantData.timeLabels,
+                        datasets: [
+                            {
+                                label: '温度 (°C)',
+                                data: plantData.plants[0].temperature.history,
+                                borderColor: '#165DFF',
+                                backgroundColor: 'rgba(22, 93, 255, 0.1)',
+                                tension: 0.3,
+                                fill: false
+                            },
+                            {
+                                label: '湿度 (%)',
+                                data: plantData.plants[0].humidity.history,
+                                borderColor: '#3B82F6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                tension: 0.3,
+                                fill: false
+                            }
+                        ]
                     },
-                    scales: {
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: 'Temperature (°C)'
-                            },
-                            min: 15,
-                            max: 35
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
                         },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: 'Humidity (%)'
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                }
                             },
-                            min: 30,
-                            max: 100,
-                            grid: {
-                                drawOnChartArea: false
+                            y: {
+                                min: 0,
+                                max: 100
                             }
                         }
                     }
                 }
-            });
-        }
+            );
 
-        // 更新土壤湿度图表
-        function updatePlantSoilChart(plant) {
-            const ctx = document.getElementById('plant-soil-chart').getContext('2d');
-            
-            // 清除现有图表
-            if (window.plantSoilChart) {
-                window.plantSoilChart.destroy();
-            }
-            
-            // 创建时间标签
-            const labels = Array.from({length: 24}, (_, i) => {
-                const hour = new Date();
-                hour.setHours(hour.getHours() - 23 + i);
-                return hour.getHours() + ':00';
-            });
-            
-            // 创建图表
-            window.plantSoilChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Soil Moisture (%)',
-                            data: plant.soilMoisture.history,
-                            borderColor: '#FFAB00',
-                            backgroundColor: 'rgba(255, 171, 0, 0.1)',
-                            tension: 0.3,
-                            fill: true
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
+            // 植物土壤湿度图表
+            plantSoilChart = new Chart(
+                document.getElementById('plant-soil-chart'),
+                {
+                    type: 'line',
+                    data: {
+                        labels: plantData.timeLabels,
+                        datasets: [
+                            {
+                                label: '土壤湿度 (%)',
+                                data: plantData.plants[0].soilMoisture.history,
+                                borderColor: '#F59E0B',
+                                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                                tension: 0.3,
+                                fill: true
+                            }
+                        ]
                     },
-                    scales: {
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: 'Soil Moisture (%)'
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                }
                             },
-                            min: 0,
-                            max: 100
+                            y: {
+                                min: 0,
+                                max: 100
+                            }
                         }
                     }
                 }
-            });
+            );
+        }
+
+        // 初始化整体趋势图表
+        function initOverallTrendCharts() {
+            // 整体趋势图表
+            overallTrendChart = new Chart(
+                document.getElementById('overall-trend-chart'),
+                {
+                    type: 'line',
+                    data: {
+                        labels: plantData.timeLabels,
+                        datasets: [
+                            {
+                                label: '平均温度 (°C)',
+                                data: Array(24).fill(0),
+                                borderColor: '#FF6B6B',
+                                backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                                tension: 0.3,
+                                fill: false
+                            },
+                            {
+                                label: '平均湿度 (%)',
+                                data: Array(24).fill(0),
+                                borderColor: '#4D96FF',
+                                backgroundColor: 'rgba(77, 150, 255, 0.1)',
+                                tension: 0.3,
+                                fill: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                min: 0,
+                                max: 100
+                            }
+                        }
+                    }
+                }
+            );
+
+            // 整体土壤湿度图表
+            overallSoilChart = new Chart(
+                document.getElementById('overall-soil-chart'),
+                {
+                    type: 'line',
+                    data: {
+                        labels: plantData.timeLabels,
+                        datasets: [
+                            {
+                                label: '平均土壤湿度 (%)',
+                                data: Array(24).fill(0),
+                                borderColor: '#6BCB77',
+                                backgroundColor: 'rgba(107, 203, 119, 0.1)',
+                                tension: 0.3,
+                                fill: true
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                min: 0,
+                                max: 100
+                            }
+                        }
+                    }
+                }
+            );
         }
 
         // 更新整体趋势图表
         function updateOverallTrendCharts() {
-            // 创建时间标签
-            const labels = Array.from({length: 24}, (_, i) => {
-                const hour = new Date();
-                hour.setHours(hour.getHours() - 23 + i);
-                return hour.getHours() + ':00';
+            // 计算所有植物的平均值
+            const tempHistory = Array(24).fill(0);
+            const humHistory = Array(24).fill(0);
+            const soilHistory = Array(24).fill(0);
+
+            plantData.plants.forEach(plant => {
+                for (let i = 0; i < 24; i++) {
+                    tempHistory[i] += plant.temperature.history[i] || 0;
+                    humHistory[i] += plant.humidity.history[i] || 0;
+                    soilHistory[i] += plant.soilMoisture.history[i] || 0;
+                }
             });
-            
-            // 计算每小时的平均值
-            const hourlyTempAvg = [];
-            const hourlyHumidityAvg = [];
-            const hourlySoilAvg = [];
-            
+
+            // 计算平均值
+            const plantCount = plantData.plants.length;
             for (let i = 0; i < 24; i++) {
-                const tempValues = plantData.plants.map(p => p.temperature.history[i]);
-                const humidityValues = plantData.plants.map(p => p.humidity.history[i]);
-                const soilValues = plantData.plants.map(p => p.soilMoisture.history[i]);
-                
-                hourlyTempAvg.push(tempValues.reduce((a, b) => a + b, 0) / tempValues.length);
-                hourlyHumidityAvg.push(humidityValues.reduce((a, b) => a + b, 0) / humidityValues.length);
-                hourlySoilAvg.push(soilValues.reduce((a, b) => a + b, 0) / soilValues.length);
+                tempHistory[i] = tempHistory[i] / plantCount;
+                humHistory[i] = humHistory[i] / plantCount;
+                soilHistory[i] = soilHistory[i] / plantCount;
             }
-            
-            // 更新温度和湿度趋势图
+
+            // 更新整体趋势图表
+            overallTrendChart.data.datasets[0].data = tempHistory;
+            overallTrendChart.data.datasets[1].data = humHistory;
+            overallTrendChart.update();
+
+            // 更新整体土壤湿度图表
+            overallSoilChart.data.datasets[0].data = soilHistory;
+            overallSoilChart.update();
+
+            // 更新统计信息
+            updateOverallStats(tempHistory, humHistory, soilHistory);
+        }
+
+        // 更新整体统计信息
+        function updateOverallStats(tempHistory, humHistory, soilHistory) {
+            // 温度统计
+            const tempAvg = calculateAverage(tempHistory);
+            const tempMax = Math.max(...tempHistory);
+            const tempMin = Math.min(...tempHistory);
+            const tempVar = calculateVariance(tempHistory);
+
+            document.getElementById('overall-temp-avg').textContent = tempAvg.toFixed(1) + '°C';
+            document.getElementById('overall-temp-max').textContent = tempMax.toFixed(1) + '°C';
+            document.getElementById('overall-temp-min').textContent = tempMin.toFixed(1) + '°C';
+            document.getElementById('overall-temp-var').textContent = tempVar.toFixed(2) + '°C';
+
+            // 湿度统计
+            const humAvg = calculateAverage(humHistory);
+            const humMax = Math.max(...humHistory);
+            const humMin = Math.min(...humHistory);
+            const humVar = calculateVariance(humHistory);
+
+            document.getElementById('overall-humidity-avg').textContent = humAvg.toFixed(1) + '%';
+            document.getElementById('overall-humidity-max').textContent = humMax.toFixed(1) + '%';
+            document.getElementById('overall-humidity-min').textContent = humMin.toFixed(1) + '%';
+            document.getElementById('overall-humidity-var').textContent = humVar.toFixed(2) + '%';
+
+            // 土壤湿度统计
+            const soilAvg = calculateAverage(soilHistory);
+            const soilMax = Math.max(...soilHistory);
+            const soilMin = Math.min(...soilHistory);
+            const soilVar = calculateVariance(soilHistory);
+
+            document.getElementById('overall-soil-avg').textContent = soilAvg.toFixed(1) + '%';
+            document.getElementById('overall-soil-max').textContent = soilMax.toFixed(1) + '%';
+            document.getElementById('overall-soil-min').textContent = soilMin.toFixed(1) + '%';
+            document.getElementById('overall-soil-var').textContent = soilVar.toFixed(2) + '%';
+        }
+
+        // 更新植物图表
+        function updatePlantCharts() {
+            const selectedPlantId = document.getElementById('plant-select').value;
+            const selectedPlant = plantData.plants.find(p => p.id === selectedPlantId);
+
+            if (selectedPlant) {
+                // 更新环境参数图表
+                plantEnvironmentChart.data.datasets[0].data = selectedPlant.temperature.history;
+                plantEnvironmentChart.data.datasets[1].data = selectedPlant.humidity.history;
+                plantEnvironmentChart.update();
+
+                // 更新土壤湿度图表
+                plantSoilChart.data.datasets[0].data = selectedPlant.soilMoisture.history;
+                plantSoilChart.update();
+
+                // 更新当前植物数据显示
+                document.getElementById('current-plant-temp').textContent = `${selectedPlant.temperature.current.toFixed(1)}°C`;
+                document.getElementById('current-plant-humidity').textContent = `${selectedPlant.humidity.current.toFixed(1)}%`;
+                document.getElementById('current-plant-soil').textContent = `${selectedPlant.soilMoisture.current.toFixed(1)}%`;
+
+                // 更新状态标签
+                updateStatusBadge('temp', selectedPlant.temperature.current, selectedPlant.temperature.thresholds);
+                updateStatusBadge('humidity', selectedPlant.humidity.current, selectedPlant.humidity.thresholds);
+                updateStatusBadge('soil', selectedPlant.soilMoisture.current, selectedPlant.soilMoisture.thresholds);
+
+                // 更新1小时平均值
+                document.getElementById('temp-1h-avg').textContent = `${calculateAverage(selectedPlant.temperature.history.slice(-4)).toFixed(1)}°C`;
+                document.getElementById('humidity-1h-avg').textContent = `${calculateAverage(selectedPlant.humidity.history.slice(-4)).toFixed(1)}%`;
+                document.getElementById('soil-1h-avg').textContent = `${calculateAverage(selectedPlant.soilMoisture.history.slice(-4)).toFixed(1)}%`;
+
+                // 更新最大值和最小值
+                document.getElementById('temp-max').textContent = `${Math.max(...selectedPlant.temperature.history).toFixed(1)}°C`;
+                document.getElementById('humidity-max').textContent = `${Math.max(...selectedPlant.humidity.history).toFixed(1)}%`;
+                document.getElementById('soil-max').textContent = `${Math.max(...selectedPlant.soilMoisture.history).toFixed(1)}%`;
+
+                document.getElementById('temp-min').textContent = `${Math.min(...selectedPlant.temperature.history).toFixed(1)}°C`;
+                document.getElementById('humidity-min').textContent = `${Math.min(...selectedPlant.humidity.history).toFixed(1)}%`;
+                document.getElementById('soil-min').textContent = `${Math.min(...selectedPlant.soilMoisture.history).toFixed(1)}%`;
+
+                // 更新方差
+                document.getElementById('temp-variance').textContent = `${calculateVariance(selectedPlant.temperature.history).toFixed(2)}°C`;
+                document.getElementById('humidity-variance').textContent = `${calculateVariance(selectedPlant.humidity.history).toFixed(2)}%`;
+                document.getElementById('soil-variance').textContent = `${calculateVariance(selectedPlant.soilMoisture.history).toFixed(2)}%`;
+            }
+        }
+
+        // 计算平均值
+        function calculateAverage(arr) {
+            return arr.reduce((sum, value) => sum + value, 0) / arr.length;
+        }
+
+        // 计算方差
+        function calculateVariance(arr) {
+            const mean = calculateAverage(arr);
+            return calculateAverage(arr.map(x => Math.pow(x - mean, 2)));
+        }
+
+        // 更新状态徽章
+        function updateStatusBadge(type, value, thresholds) {
+            const statusElement = document.getElementById(`${type}-status`);
+            const isNormal = value >= thresholds.min && value <= thresholds.max;
+
+            if (isNormal) {
+                statusElement.className = 'ml-2 status-badge normal';
+                statusElement.textContent = 'Normal';
+            } else if (value < thresholds.min) {
+                statusElement.className = 'ml-2 status-badge warning';
+                statusElement.textContent = 'Low';
+            } else {
+                statusElement.className = 'ml-2 status-badge warning';
+                statusElement.textContent = 'High';
+            }
+        }
+
+        // 更新仪表盘数据
+        function updateDashboard() {
+            // 计算平均温度
+            const avgTemp = Math.round(plantData.plants.reduce((sum, plant) => sum + plant.temperature.current, 0) / plantData.plants.length * 10) / 10;
+            document.getElementById('avg-temp').textContent = `${avgTemp}°C`;
+            document.getElementById('temp-progress').style.width = `${Math.min(100, Math.max(0, (avgTemp - 18) * 10))}%`;
+
+            // 计算平均湿度
+            const avgHumidity = Math.round(plantData.plants.reduce((sum, plant) => sum + plant.humidity.current, 0) / plantData.plants.length);
+            document.getElementById('avg-humidity').textContent = `${avgHumidity}%`;
+            document.getElementById('humidity-progress').style.width = `${Math.min(100, Math.max(0, (avgHumidity - 40) * 2))}%`;
+
+            // 计算平均土壤湿度
+            const avgSoil = Math.round(plantData.plants.reduce((sum, plant) => sum + plant.soilMoisture.current, 0) / plantData.plants.length);
+            document.getElementById('avg-soil').textContent = `${avgSoil}%`;
+            document.getElementById('soil-progress').style.width = `${Math.min(100, Math.max(0, (avgSoil - 30) * 2))}%`;
+
+            // 计算警报数量
+            const alertCount = plantData.plants.reduce((count, plant) => count + plant.alerts.length, 0);
+            document.getElementById('alert-count').textContent = alertCount;
+
+            // 更新历史表格
+            updateHistoryTable();
+        }
+
+        // 更新历史记录表格
+        function updateHistoryTable() {
+            const historyTable = document.getElementById('history-table');
+            historyTable.innerHTML = '';
+
+            // 生成过去24小时的时间戳
+            const now = new Date();
+            const times = Array.from({length: 24}, (_, i) => {
+                const time = new Date(now.getTime() - i * 60 * 60 * 1000);
+                return `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
+            }).reverse();
+
+            // 生成表格行
+            for (let i = 0; i < 24; i++) {
+                const row = document.createElement('tr');
+                row.className = i % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+
+                // 时间列
+                const timeCell = document.createElement('td');
+                timeCell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-500';
+                timeCell.textContent = times[i];
+                row.appendChild(timeCell);
+
+                // 计算平均温度
+                const tempAvg = calculateAverage(plantData.plants.map(plant => plant.temperature.history[i] || 0));
+                const tempCell = document.createElement('td');
+                tempCell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-900';
+                tempCell.textContent = `${tempAvg.toFixed(1)}°C`;
+                row.appendChild(tempCell);
+
+                // 计算平均湿度
+                const humAvg = calculateAverage(plantData.plants.map(plant => plant.humidity.history[i] || 0));
+                const humidityCell = document.createElement('td');
+                humidityCell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-900';
+                humidityCell.textContent = `${humAvg.toFixed(1)}%`;
+                row.appendChild(humidityCell);
+
+                // 计算平均土壤湿度
+                const soilAvg = calculateAverage(plantData.plants.map(plant => plant.soilMoisture.history[i] || 0));
+                const soilCell = document.createElement('td');
+                soilCell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-900';
+                soilCell.textContent = `${soilAvg.toFixed(1)}%`;
+                row.appendChild(soilCell);
+
+                // 警报列
+                const alertCell = document.createElement('td');
+                alertCell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-900';
+                const totalAlerts = plantData.plants.reduce((count, plant) => {
+                    // 检查该时间点是否有警报
+                    const hasAlert = plant.alerts.some(alert => {
+                        const alertTime = new Date(alert.time);
+                        return alertTime.getHours() === parseInt(times[i].split(':')[0]);
+                    });
+                    return count + (hasAlert ? 1 : 0);
+                }, 0);
+                alertCell.textContent = totalAlerts;
+                row.appendChild(alertCell);
+
+                historyTable.appendChild(row);
+            }
+        }
+
+        // 为Refresh Data按钮添加点击事件监听器
+        const refreshButton = document.getElementById('refresh-data-btn');
+        refreshButton.addEventListener('click', () => {
+            DataReceiver.refreshData();
+        });
+
+        // 为Custom Thresholds按钮添加点击事件监听器
+        const customizeThresholdButton = document.getElementById('customize-threshold');
+        const thresholdModal = document.getElementById('threshold-modal');
+        const closeModalButton = document.getElementById('close-modal');
+        const saveThresholdsButton = document.getElementById('save-thresholds');
+
+        customizeThresholdButton.addEventListener('click', () => {
+            // 填充当前阈值
+            const selectedPlantId = document.getElementById('plant-select').value;
+            const selectedPlant = plantData.plants.find(p => p.id === selectedPlantId);
+
+            if (selectedPlant) {
+                document.getElementById('temp-min-threshold').value = selectedPlant.temperature.thresholds.min;
+                document.getElementById('temp-max-threshold').value = selectedPlant.temperature.thresholds.max;
+                document.getElementById('humidity-min-threshold').value = selectedPlant.humidity.thresholds.min;
+                document.getElementById('humidity-max-threshold').value = selectedPlant.humidity.thresholds.max;
+                document.getElementById('soil-min-threshold').value = selectedPlant.soilMoisture.thresholds.min;
+                document.getElementById('soil-max-threshold').value = selectedPlant.soilMoisture.thresholds.max;
+            }
+
+            thresholdModal.classList.remove('hidden');
+        });
+
+        closeModalButton.addEventListener('click', () => {
+            thresholdModal.classList.add('hidden');
+        });
+
+        // 为Save Settings按钮添加点击事件监听器
+        saveThresholdsButton.addEventListener('click', () => {
+            // 获取用户输入的阈值
+            const tempMin = parseFloat(document.getElementById('temp-min-threshold').value);
+            const tempMax = parseFloat(document.getElementById('temp-max-threshold').value);
+            const humidityMin = parseFloat(document.getElementById('humidity-min-threshold').value);
+            const humidityMax = parseFloat(document.getElementById('humidity-max-threshold').value);
+            const soilMin = parseFloat(document.getElementById('soil-min-threshold').value);
+            const soilMax = parseFloat(document.getElementById('soil-max-threshold').value);
+
+            // 验证输入
+            if (tempMin >= tempMax || humidityMin >= humidityMax || soilMin >= soilMax) {
+                alert('Minimum threshold must be less than maximum threshold!');
+                return;
+            }
+
+            // 更新当前选中植物的阈值
+            const selectedPlantId = document.getElementById('plant-select').value;
+            const selectedPlant = plantData.plants.find(p => p.id === selectedPlantId);
+
+            if (selectedPlant) {
+                selectedPlant.temperature.thresholds.min = tempMin;
+                selectedPlant.temperature.thresholds.max = tempMax;
+                selectedPlant.humidity.thresholds.min = humidityMin;
+                selectedPlant.humidity.thresholds.max = humidityMax;
+                selectedPlant.soilMoisture.thresholds.min = soilMin;
+                selectedPlant.soilMoisture.thresholds.max = soilMax;
+
+                // 更新状态徽章
+                updateStatusBadge('temp', selectedPlant.temperature.current, selectedPlant.temperature.thresholds);
+                updateStatusBadge('humidity', selectedPlant.humidity.current, selectedPlant.humidity.thresholds);
+                updateStatusBadge('soil', selectedPlant.soilMoisture.current, selectedPlant.soilMoisture.thresholds);
+
+                // 关闭模态框
+                thresholdModal.classList.add('hidden');
+
+                // 显示保存成功提示
+                const notification = document.createElement('div');
+                notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+                notification.textContent = 'Thresholds saved successfully!';
+                document.body.appendChild(notification);
+
+                // 3秒后自动消失
+                setTimeout(() => {
+                    notification.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 500);
+                }, 3000);
+            }
+        });
+
+        // 为植物选择下拉菜单添加事件监听器
+        const plantSelect = document.getElementById('plant-select');
+        plantSelect.addEventListener('change', updatePlantCharts);
+
+        // 初始化数据接收
+        DataReceiver.init();
+
+        // 初始化图表
+        initPlantCharts();
+        initOverallTrendCharts();
+
+        // 初始更新仪表盘
+        updateDashboard();
+        updatePlantCharts();
+        updateOverallTrendCharts();
+    </script>
+</body>
+</html>

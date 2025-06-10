@@ -107,7 +107,7 @@ def listening():
     client = mqtt.Client(client_id=CLIENT_ID, callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
     client.on_connect = on_connect
     client.on_message = on_message
-    client.on_disconnect = on_disconnect
+    #client.on_disconnect = on_disconnect
 
     # 添加MQTT认证（如果需要）
     # client.username_pw_set("username", "password")

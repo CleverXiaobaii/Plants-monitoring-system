@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>智能植物监控</title>
+
+  <!-- Tailwind（开发用 CDN，生产可改成本地编译版）-->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: { colors:{ primary:'#165DFF', danger:'#F87272' }, fontFamily:{ inter:['Inter','sans-serif'] } }
+      }
+    }
+  </script>
+
+  <!-- 图标 & Chart.js -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+
+</head>
+<body class="bg-gray-50 font-inter">
+
+  <!-- 实时仪表盘 -->
+  <section class="grid grid-cols-2 md:grid-cols-4 gap-4 p-6">
+    <div class="bg-white p-4 rounded shadow">
+      <p class="text-gray-500">平均温度</p><h2 id="avg-temp" class="text-2xl font-bold">-- °C</h2>
+    </div>
+    <div class="bg-white p-4 rounded shadow">
+      <p class="text-gray-500">平均湿度</p><h2 id="avg-hum" class="text-2xl font-bold">-- %</h2>
+    </div>
+    <div class="bg-white p-4 rounded shadow">
+      <p class="text-gray-500">平均土壤湿度</p><h2 id="avg-soil" class="text-2xl font-bold">-- %</h2>
+    </div>
+    <div class="bg-white p-4 rounded shadow">
+      <p class="text-gray-500">报警总次数</p><h2 id="alert-count" class="text-2xl font-bold text-danger">--</h2>
+    </div>
+  </section>
+
+  <!-- 趋势图 & 统计 -->
+  <section class="p-6 space-y-6">
+    <div class="flex justify-between items-center">
+      <h3 class="text-lg font-semibold">过去24小时平均趋势</h3>
+      <select id="time-range" class="border rounded px-2 py-1">
+        <option value="1">1h</option>
+        <option value="6">6h</option>
+        <option value="12">12h</option>
+        <option value="24" selected>24h</option>
+      </select>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <canvas id="chart-th" class="bg-white rounded shadow p-4"></canvas>
+      <canvas id="chart-soil" class="bg-white rounded shadow p-4"></canvas>
+    </div>
+    <div class="grid grid-cols-3 gap-4">
+      <div class="bg-white p-4 rounded shadow text-sm space-y-1">
+        <p class="font-medium">温度统计</p>
+        <div class="flex justify-between"><span>平均</span><span id="temp-avg">-- °C</span></div>
+        <div class="flex justify-between"><span>最大</span><span id="temp-max">-- °C</span></div>
+        <div class="flex justify-between"><span>最小</span><span id="temp-min">-- °C</span></div>
+        <div class="flex justify-between"><span>方差</span><span id="temp-var">--</span></div>
+      </div>
+      <div class="bg-white p-4 rounded shadow text-sm space-y-1">
+        <p class="font-medium">湿度统计</p>
+        <div class="flex justify-between"><span>平均</span><span id="hum-avg">-- %</span></div>
+        <div class="flex justify-between"><span>最大</span><span id="hum-max">-- %</span></div>
+        <div class="flex justify-between"><span>最小</span><span id="hum-min">-- %</span></div>
+        <div class="flex justify-between"><span>方差</span><span id="hum-var">--</span></div>
+      </div>
+      <div class="bg-white p-4 rounded shadow text-sm space-y-1">
+        <p class="font-medium">土壤湿度统计</p>
+        <div class="flex justify-between"><span>平均</span><span id="soil-avg">-- %</span></div>
+        <div class="flex justify-between"><span>最大</span><span id="soil-max">-- %</span></div>
+        <div class="flex justify-between"><span>最小</span><span id="soil-min">-- %</span></div>
+        <div class="flex justify-between"><span>方差</span><span id="soil-var">--</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 单株监控 -->
+  <section class="p-6 space-y-4">
+    <div class="flex items-center space-x-4">
+      <h3 class="text-lg font-semibold">单株监控</h3>
+      <select id="plant-select" class="border rounded px-2 py-1"></select>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-white p-4 rounded shadow text-center">
+        <p class="text-gray-500">温度</p><h2 id="p-temp" class="text-2xl font-bold">-- °C</h2>
+      </div>
+      <div class="bg-white p-4 rounded shadow text-center">
+        <p class="text-gray-500">湿度</p><h2 id="p-hum" class="text-2xl font-bold">-- %</h2>
+      </div>
+      <div class="bg-white p-4 rounded shadow text-center">
+        <p class="text-gray-500">土壤湿度</p><h2 id="p-soil" class="text-2xl font-bold">-- %</h2>
+      </div>
+    </div>
+  </section>
+
+  <!-- 历史表格 -->
+  <section class="p-6">
+    <h3 class="text-lg font-semibold mb-2">过去24小时每小时平均</h3>
+    <div class="overflow-auto bg-white rounded shadow">
+      <table class="w-full text-sm divide-y">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="px-2 py-1">时间</th>
+            <th class="px-2 py-1">温度</th>
+            <th class="px-2 py-1">湿度</th>
+            <th class="px-2 py-1">土湿度</th>
+            <th class="px-2 py-1">报警数</th>
+          </tr>
+        </thead>
+        <tbody id="history-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+<script>
+  // 简易统计函数
+  const avg = a=>a.reduce((s,v)=>s+v,0)/a.length;
+  const variance = a=> {
+    const m = avg(a);
+    return avg(a.map(x=> (x-m)**2 ));
+  };
+  // 生成 ["0:00","1:00",…,"23:00"]
+  const hours = Array.from({length:24},(_,i)=> i+':00');
+
+  let thChart, soilChart;
+
+  function initCharts(){
+    thChart = new Chart(document.getElementById('chart-th'), {
+      type:'line',
+      data:{ labels:[], datasets:[
+        {label:'温度', data:[], borderColor:'#165DFF', tension:0.3},
+        {label:'湿度', data:[], borderColor:'#FF6B6B', tension:0.3}
+      ]},
+      options:{ responsive:true, scales:{ y:{min:0,max:100} } }
+    });
+    soilChart = new Chart(document.getElementById('chart-soil'), {
+      type:'line',
+      data:{ labels:[], datasets:[
+        {label:'土壤湿度', data:[], borderColor:'#36D399', tension:0.3}
+      ]},
+      options:{ responsive:true, scales:{ y:{min:0,max:100} } }
+    });
+  }
+
+  // 从后端拉数据并渲染
+  function fetchAndRender(){
+    fetch('http://127.0.0.1:5000/sensor-data')
+      .then(r=>r.json())
+      .then(data=>{
+        // 1) 实时卡片
+        const temps = data.map(p=>p.temperature);
+        const hums  = data.map(p=>p.humidity);
+        const soils = data.map(p=>p.soil_moisture);
+        document.getElementById('avg-temp').innerText = avg(temps).toFixed(1)+' °C';
+        document.getElementById('avg-hum').innerText  = avg(hums).toFixed(0)+' %';
+        document.getElementById('avg-soil').innerText= avg(soils).toFixed(0)+' %';
+
+        // 报警总次数 = sum of each plant.alerts.length
+        const totalAlerts = data.reduce((s,p)=> s + (p.alerts?.length||0),0);
+        document.getElementById('alert-count').innerText = totalAlerts;
+
+        // 2) 整体历史趋势（固定24h，可切换显示区间）
+        const thArr = [], hmArr = [], slArr = [];
+        for(let i=0;i<24;i++){
+          thArr.push( avg(data.map(p=>p.temperature_history[i])) );
+          hmArr.push( avg(data.map(p=>p.humidity_history[i])) );
+          slArr.push( avg(data.map(p=>p.soil_moisture_history[i])) );
+        }
+        const r = +document.getElementById('time-range').value;
+        const start = 24 - r;
+        thChart.data.labels = hours.slice(start);
+        thChart.data.datasets[0].data = thArr.slice(start);
+        thChart.data.datasets[1].data = hmArr.slice(start);
+        thChart.update();
+        soilChart.data.labels = hours.slice(start);
+        soilChart.data.datasets[0].data = slArr.slice(start);
+        soilChart.update();
+
+        // 更新统计数字
+        function updStat(pref, arr){
+          const s = arr.slice(start);
+          document.getElementById(pref+'-avg').innerText = avg(s).toFixed(1)+(pref==='temp'? ' °C':' %');
+          document.getElementById(pref+'-max').innerText = Math.max(...s).toFixed(1)+(pref==='temp'? ' °C':' %');
+          document.getElementById(pref+'-min').innerText = Math.min(...s).toFixed(1)+(pref==='temp'? ' °C':' %');
+          document.getElementById(pref+'-var').innerText = variance(s).toFixed(2);
+        }
+        updStat('temp', thArr);
+        updStat('hum',  hmArr);
+        updStat('soil', slArr);
+
+        // 3) 单株监控
+        const sel = document.getElementById('plant-select');
+        sel.innerHTML = '';
+        data.forEach(p=>{
+          const o = document.createElement('option');
+          o.value = p.sensor_id; o.text = p.sensor_id;
+          sel.append(o);
+        });
+        sel.onchange = ()=>{
+          const cur = data.find(p=>p.sensor_id===sel.value);
+          document.getElementById('p-temp').innerText = cur.temperature.toFixed(1)+' °C';
+          document.getElementById('p-hum').innerText  = cur.humidity.toFixed(0)+' %';
+          document.getElementById('p-soil').innerText = cur.soil_moisture.toFixed(0)+' %';
+        };
+        sel.dispatchEvent(new Event('change'));
+
+        // 4) 历史表格
+        const tb = document.getElementById('history-body');
+        tb.innerHTML = '';
+        for(let i=0;i<24;i++){
+          const tr = document.createElement('tr');
+          const t = hours[i];
+          const tt= thArr[i].toFixed(1)+' °C';
+          const hh= hmArr[i].toFixed(0)+' %';
+          const ss= slArr[i].toFixed(0)+' %';
+          const al = data.reduce((s,p)=>
+            s + p.alerts.filter(a=> new Date(a.time).getHours()===i).length
+          ,0);
+          tr.innerHTML = `<td class="px-2 py-1">${t}</td>
+                          <td class="px-2 py-1">${tt}</td>
+                          <td class="px-2 py-1">${hh}</td>
+                          <td class="px-2 py-1">${ss}</td>
+                          <td class="px-2 py-1">${al}</td>`;
+          tb.appendChild(tr);
+        }
+      })
+      .catch(err=> console.error('数据拉取失败：',err));
+  }
+
+  // 启动
+  window.addEventListener('load', ()=>{
+    initCharts();
+    fetchAndRender();
+    document.getElementById('time-range').onchange = fetchAndRender;
+    setInterval(fetchAndRender, 5000);
+  });
+</script>
+</body>
+</html>
